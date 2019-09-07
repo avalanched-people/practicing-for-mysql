@@ -78,7 +78,49 @@ step1 对每一个 c1, c2分组进行统计
 select c1, ifnull(c2, 'total'), sum(c3) 
 from tx
 group by c1, c2
-withi rollup
+with rollup
 having c1 is not null
 ```
-
+得到结果如下:  
++----+---------------------+---------+  
+| c1 | ifnull(c2, 'total') | sum(c3) |  
++----+---------------------+---------+  
+| A1 | B1                  | 9       |  
+| A1 | B2                  | 2       |  
+| A1 | B3                  | 1       |  
+| A1 | B4                  | 11      |  
+| A1 | total               | 23      |  
+| A2 | B1                  | 7       |  
+| A2 | B2                  | 9       |  
+| A2 | B3                  | 8       |  
+| A2 | B4                  | 7       |  
+| A2 | total               | 31      |  
+| A3 | B1                  | 4       |  
+| A3 | B2                  | 8       |  
+| A3 | B3                  | 8       |  
+| A3 | B4                  | 8       |  
+| A3 | total               | 28      |  
+| A4 | B1                  | 2       |  
+| A4 | B2                  | 5       |  
+| A4 | B3                  | 6       |  
+| A4 | B4                  | 14      |  
+| A4 | total               | 27      |  
++----+---------------------+---------+  
+20 rows in set  
+接下来进行进一步的加总，主要是sum(if())的使用!  
+```mysql
+select 
+ifnull(c1, 'total') c1, 
+sum(if(c2 = 'B1', c3, 0)) B1, 
+sum(if(c2 = 'B2', c3, 0)) B2, 
+sum(if(c2 = 'B3', c3, 0)) B3, 
+sum(if(c2 = 'B4', c3, 0)) B4, 
+sum(if(c2 = 'total', c3, 0)) total 
+from 
+(select c1, ifnull(c2, 'total') c2, sum(c3) c3 
+from tx
+group by c1, c2
+with rollup
+having c1 is not null) p 
+group by c1 with rollup;
+```
